@@ -1,1 +1,74 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personal Assistant - M3</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:sans-serif}
+body{background:#0f172a;color:#fff;padding:16px}
+h1{text-align:center;margin:10px 0 4px}
+p.sub{text-align:center;color:#94a3b8;margin-bottom:18px}
+.card{background:#1e293b;padding:16px;border-radius:16px;margin-bottom:14px}
+.card h2{font-size:18px;margin-bottom:10px}
+input{width:100%;padding:12px;border-radius:10px;border:none;outline:none;margin-bottom:10px}
+button{width:100%;padding:12px;border:none;border-radius:10px;background:#22c55e;color:#fff;font-size:16px;font-weight:bold}
+ul{list-style:none;margin-top:10px}
+li{background:#334155;padding:10px;border-radius:10px;margin-bottom:8px;display:flex;justify-content:space-between}
+li span{cursor:pointer}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tool{background:#1e293b;padding:16px;border-radius:16px;text-align:center;cursor:pointer}
+.tool b{font-size:28px;display:block}
+textarea{width:100%;height:100px;border-radius:10px;padding:10px;border:none;outline:none}
+</style>
+</head>
+<body>
+<h1>🤖 Personal Assistant</h1>
+<p class="sub">M3 • তোমার সব কাজ এক জায়গায়</p>
 
+<div class="card">
+<h2>✅ আজকের কাজ</h2>
+<input id="taskInput" placeholder="নতুন কাজ লিখো...">
+<button onclick="addTask()">+ কাজ যোগ করো</button>
+<ul id="taskList"></ul>
+</div>
+
+<div class="grid">
+<div class="tool" onclick="alert('আজ '+new Date().toLocaleDateString('bn-BD'))"><b>📅</b>আজকের তারিখ</div>
+<div class="tool" onclick="alert('সময়: '+new Date().toLocaleTimeString('bn-BD'))"><b>🕒</b>এখন কয়টা?</div>
+<div class="tool" onclick="location.reload()"><b>🔄</b>রিফ্রেশ</div>
+<div class="tool" onclick="alert('তুমি পারবে! আজকের কাজগুলো শেষ করো 💪')"><b>💪</b>মোটিভেশন</div>
+</div>
+
+<br>
+<div class="card">
+<h2>📝 নোট</h2>
+<textarea id="note" placeholder="এখানে নোট লিখো..."></textarea>
+<button onclick="saveNote()" style="margin-top:10px;background:#3b82f6">নোট সেভ করো</button>
+<p id="saved" style="margin-top:8px;color:#4ade80"></p>
+</div>
+
+<script>
+let tasks = JSON.parse(localStorage.getItem('tasks')||'[]');
+function render(){
+let ul=document.getElementById('taskList'); ul.innerHTML='';
+tasks.forEach((t,i)=>{
+ul.innerHTML+=`<li>${t} <span onclick="delTask(${i})">❌</span></li>`;
+});
+}
+function addTask(){
+let v=document.getElementById('taskInput').value;
+if(!v) return; tasks.push(v);
+localStorage.setItem('tasks',JSON.stringify(tasks));
+document.getElementById('taskInput').value=''; render();
+}
+function delTask(i){ tasks.splice(i,1); localStorage.setItem('tasks',JSON.stringify(tasks)); render(); }
+function saveNote(){
+localStorage.setItem('note',document.getElementById('note').value);
+document.getElementById('saved').innerText='✅ নোট সেভ হয়ে গেছে!';
+}
+document.getElementById('note').value=localStorage.getItem('note')||'';
+render();
+</script>
+</body>
+</html>
