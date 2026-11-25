@@ -3,71 +3,94 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Personal Assistant - M3</title>
+<title>Personal Assistant - Voice</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:sans-serif}
-body{background:#0f172a;color:#fff;padding:16px}
-h1{text-align:center;margin:10px 0 4px}
-p.sub{text-align:center;color:#94a3b8;margin-bottom:18px}
-.card{background:#1e293b;padding:16px;border-radius:16px;margin-bottom:14px}
-.card h2{font-size:18px;margin-bottom:10px}
-input{width:100%;padding:12px;border-radius:10px;border:none;outline:none;margin-bottom:10px}
-button{width:100%;padding:12px;border:none;border-radius:10px;background:#22c55e;color:#fff;font-size:16px;font-weight:bold}
-ul{list-style:none;margin-top:10px}
-li{background:#334155;padding:10px;border-radius:10px;margin-bottom:8px;display:flex;justify-content:space-between}
-li span{cursor:pointer}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.tool{background:#1e293b;padding:16px;border-radius:16px;text-align:center;cursor:pointer}
-.tool b{font-size:28px;display:block}
-textarea{width:100%;height:100px;border-radius:10px;padding:10px;border:none;outline:none}
+body{font-family:sans-serif;background:#f3f4f6;margin:0;padding:16px}
+.card{max-width:480px;margin:auto;background:white;border-radius:16px;padding:20px;box-shadow:0 4px 20px rgba(0,0,0,.08)}
+h1{text-align:center;margin:5px 0}
+p{text-align:center;color:#666}
+input{width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;margin-bottom:10px;font-size:16px;box-sizing:border-box}
+button{width:100%;padding:12px;background:#111;color:white;border:none;border-radius:10px;font-size:16px;cursor:pointer;margin-bottom:8px}
+.task{display:flex;justify-content:space-between;align-items:center;background:#f9fafb;padding:12px;border-radius:10px;margin-top:10px}
+.del{background:#fee2e2;color:#dc2626;border:none;padding:6px 10px;border-radius:8px;width:auto;cursor:pointer}
 </style>
 </head>
 <body>
-<h1>🤖 Personal Assistant</h1>
-<p class="sub">M3 • তোমার সব কাজ এক জায়গায়</p>
-
 <div class="card">
-<h2>✅ আজকের কাজ</h2>
-<input id="taskInput" placeholder="নতুন কাজ লিখো...">
-<button onclick="addTask()">+ কাজ যোগ করো</button>
-<ul id="taskList"></ul>
-</div>
-
-<div class="grid">
-<div class="tool" onclick="alert('আজ '+new Date().toLocaleDateString('bn-BD'))"><b>📅</b>আজকের তারিখ</div>
-<div class="tool" onclick="alert('সময়: '+new Date().toLocaleTimeString('bn-BD'))"><b>🕒</b>এখন কয়টা?</div>
-<div class="tool" onclick="location.reload()"><b>🔄</b>রিফ্রেশ</div>
-<div class="tool" onclick="alert('তুমি পারবে! আজকের কাজগুলো শেষ করো 💪')"><b>💪</b>মোটিভেশন</div>
-</div>
-
-<br>
-<div class="card">
-<h2>📝 নোট</h2>
-<textarea id="note" placeholder="এখানে নোট লিখো..."></textarea>
-<button onclick="saveNote()" style="margin-top:10px;background:#3b82f6">নোট সেভ করো</button>
-<p id="saved" style="margin-top:8px;color:#4ade80"></p>
+<h1>Personal Assistant</h1>
+<p id="date"></p>
+<input id="taskText" placeholder="ভয়েসে যা শুনতে চাও, হুবহু তাই লিখো...">
+<input id="taskTime" type="time">
+<button onclick="addTask()">🔔 ভয়েস অ্যালার্ম সহ যোগ করুন</button>
+<button onclick="askNotify()" style="background:#2563eb">🔔 নোটিফিকেশন চালু করুন</button>
+<button onclick="testVoice()" style="background:#16a34a">🎤 যা লিখছো তা ভয়েসে শুনো</button>
+<div id="list"></div>
 </div>
 
 <script>
-let tasks = JSON.parse(localStorage.getItem('tasks')||'[]');
-function render(){
-let ul=document.getElementById('taskList'); ul.innerHTML='';
-tasks.forEach((t,i)=>{
-ul.innerHTML+=`<li>${t} <span onclick="delTask(${i})">❌</span></li>`;
-});
+let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+document.getElementById('date').innerText = new Date().toLocaleDateString('bn-BD',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+function askNotify(){
+  if("Notification" in window) Notification.requestPermission().then(p=>{ alert(p==='granted'?'নোটিফিকেশন চালু!':'Allow দাও'); });
 }
+
+// তুমি যা লিখবা, হুবহু তাই বলবে - কিছু যোগ হবে না
+function speak(text){
+  speechSynthesis.cancel();
+  let msg = new SpeechSynthesisUtterance(text);
+  msg.lang = 'bn-BD';
+  msg.rate = 0.95;
+  let voices = speechSynthesis.getVoices();
+  let bn = voices.find(v=>v.lang.includes('bn') || v.lang.includes('hi') || v.lang.includes('en'));
+  if(bn) msg.voice = bn;
+  speechSynthesis.speak(msg);
+}
+function testVoice(){
+  let t = document.getElementById('taskText').value.trim();
+  if(!t) return speak('তুমি যা লিখবা আমি তাই বলবো');
+  speak(t); // তোমার লেখাটাই বলবে
+}
+
+function save(){ localStorage.setItem('tasks', JSON.stringify(tasks)); render(); }
 function addTask(){
-let v=document.getElementById('taskInput').value;
-if(!v) return; tasks.push(v);
-localStorage.setItem('tasks',JSON.stringify(tasks));
-document.getElementById('taskInput').value=''; render();
+  let t = document.getElementById('taskText').value.trim();
+  let time = document.getElementById('taskTime').value;
+  if(!t) return alert('আগে ভয়েসে যা শুনতে চাও তা লিখো');
+  if(!time) return alert('সময় দাও');
+  tasks.push({text:t, time:time, done:false, alerted:false});
+  document.getElementById('taskText').value='';
+  askNotify(); save();
+  alert('সেট হয়ে গেছে! '+time+' টায় তোমার লেখাটাই বলবে');
 }
-function delTask(i){ tasks.splice(i,1); localStorage.setItem('tasks',JSON.stringify(tasks)); render(); }
-function saveNote(){
-localStorage.setItem('note',document.getElementById('note').value);
-document.getElementById('saved').innerText='✅ নোট সেভ হয়ে গেছে!';
+function render(){
+  let list = document.getElementById('list');
+  list.innerHTML = '<h3>আজকের কাজ</h3>';
+  if(tasks.length===0) list.innerHTML += '<p>কোনো কাজ নেই</p>';
+  tasks.forEach((task,i)=>{
+    list.innerHTML += `<div class="task"><div><b>${task.text}</b><br><small>⏰ ${task.time}</small></div><div><button class="del" onclick="speakTask(${i})">▶️</button> <button class="del" onclick="delTask(${i})">✕</button></div></div>`;
+  });
 }
-document.getElementById('note').value=localStorage.getItem('note')||'';
+function speakTask(i){ speak(tasks[i].text); }
+function delTask(i){ tasks.splice(i,1); save(); }
+
+function checkAlarm(){
+  let cur = new Date().toTimeString().slice(0,5);
+  tasks.forEach((task)=>{
+    if(task.time===cur && !task.alerted && !task.done){
+      task.alerted=true; save();
+      // তোমার লেখাটাই - মেসেজ + ভয়েস
+      if(Notification.permission==='granted'){
+        new Notification('⏰ Personal Assistant', {body: task.text});
+      }
+      speak(task.text);
+      if(navigator.vibrate) navigator.vibrate([500,200,500]);
+      setTimeout(()=>{ speak(task.text); }, 8000);
+      alert('⏰ '+task.text);
+    }
+  });
+}
+setInterval(checkAlarm, 1000);
 render();
 </script>
 </body>
