@@ -1,100 +1,31 @@
 <!DOCTYPE html>
-<html lang="bn">
-<head>
-  <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#000000">
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Personal Assistant - Voice</title>
+<html lang="bn"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Assistant M.3</title>
 <style>
-body{font-family:sans-serif;background:#f3f4f6;margin:0;padding:16px}
-.card{max-width:480px;margin:auto;background:white;border-radius:16px;padding:20px;box-shadow:0 4px 20px rgba(0,0,0,.08)}
-h1{text-align:center;margin:5px 0}
-p{text-align:center;color:#666}
-input{width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;margin-bottom:10px;font-size:16px;box-sizing:border-box}
-button{width:100%;padding:12px;background:#111;color:white;border:none;border-radius:10px;font-size:16px;cursor:pointer;margin-bottom:8px}
-.task{display:flex;justify-content:space-between;align-items:center;background:#f9fafb;padding:12px;border-radius:10px;margin-top:10px}
-.del{background:#fee2e2;color:#dc2626;border:none;padding:6px 10px;border-radius:8px;width:auto;cursor:pointer}
-</style>
-</head>
-<body>
-<div class="card">
-<h1>Personal Assistant</h1>
-  <img src="received_1700849258122059.jpeg" style="width:100%;border-radius:16px">`
-<p id="date"></p>
-<input id="taskText" placeholder="ভয়েসে যা শুনতে চাও, হুবহু তাই লিখো...">
-<input id="taskTime" type="time">
-<button onclick="addTask()">🔔 ভয়েস অ্যালার্ম সহ যোগ করুন</button>
-<button onclick="askNotify()" style="background:#2563eb">🔔 নোটিফিকেশন চালু করুন</button>
-<button onclick="testVoice()" style="background:#16a34a">🎤 যা লিখছো তা ভয়েসে শুনো</button>
+*{box-sizing:border-box}body{font-family:system-ui,sans-serif;background:#f6f6f6;margin:0;padding:14px}
+.card{background:#fff;border-radius:18px;padding:18px}
+input{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;font-size:16px;margin:10px 0}
+.btn{width:100%;padding:15px;border:0;border-radius:12px;font-size:17px;font-weight:700}
+.black{background:#111;color:#fff}.blue{background:#2563eb;color:#fff;margin-top:10px}
+.green{background:#16a34a;color:#fff;margin-top:10px}.task{background:#fff;border-radius:14px;padding:14px;margin-top:12px;display:flex;justify-content:space-between}
+</style></head><body>
+<div class="card"><h1>Assistant M.3 ✨</h1><p>আপনার ব্যক্তিগত ভয়েস অ্যাসিস্ট্যান্ট</p>
+<input id="text" placeholder="ভয়েসে যা শুনতে চাও লিখো...">
+<input id="time" type="time">
+<button class="btn black" onclick="addTask()">🔔 ভয়েস অ্যালার্ম সহ যোগ করুন</button>
+<button class="btn blue" onclick="enableNotif()">🔔 নোটিফিকেশন চালু করুন</button>
+<button class="btn green" id="wakeBtn" onclick="toggleWake()">☀️ স্ক্রিন অন রাখুন - অ্যালার্ম ১০০% বাজবে</button>
+<div id="status" style="background:#fef9c3;padding:10px;border-radius:10px;margin-top:10px">✅ অ্যাপ খোলা আছে - প্রতি ৫ সেকেন্ডে টাইম চেক চলছে।</div></div>
 <div id="list"></div>
-</div>
-
 <script>
-let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-document.getElementById('date').innerText = new Date().toLocaleDateString('bn-BD',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-
-function askNotify(){
-  if("Notification" in window) Notification.requestPermission().then(p=>{ alert(p==='granted'?'নোটিফিকেশন চালু!':'Allow দাও'); });
-}
-
-// তুমি যা লিখবা, হুবহু তাই বলবে - কিছু যোগ হবে না
-function speak(text){
-  speechSynthesis.cancel();
-  let msg = new SpeechSynthesisUtterance(text);
-  msg.lang = 'bn-BD';
-  msg.rate = 0.95;
-  let voices = speechSynthesis.getVoices();
-  let bn = voices.find(v=>v.lang.includes('bn') || v.lang.includes('hi') || v.lang.includes('en'));
-  if(bn) msg.voice = bn;
-  speechSynthesis.speak(msg);
-}
-function testVoice(){
-  let t = document.getElementById('taskText').value.trim();
-  if(!t) return speak('তুমি যা লিখবা আমি তাই বলবো');
-  speak(t); // তোমার লেখাটাই বলবে
-}
-
-function save(){ localStorage.setItem('tasks', JSON.stringify(tasks)); render(); }
-function addTask(){
-  let t = document.getElementById('taskText').value.trim();
-  let time = document.getElementById('taskTime').value;
-  if(!t) return alert('আগে ভয়েসে যা শুনতে চাও তা লিখো');
-  if(!time) return alert('সময় দাও');
-  tasks.push({text:t, time:time, done:false, alerted:false});
-  document.getElementById('taskText').value='';
-  askNotify(); save();
-  alert('সেট হয়ে গেছে! '+time+' টায় তোমার লেখাটাই বলবে');
-}
-function render(){
-  let list = document.getElementById('list');
-  list.innerHTML = '<h3>আজকের কাজ</h3>';
-  if(tasks.length===0) list.innerHTML += '<p>কোনো কাজ নেই</p>';
-  tasks.forEach((task,i)=>{
-    list.innerHTML += `<div class="task"><div><b>${task.text}</b><br><small>⏰ ${task.time}</small></div><div><button class="del" onclick="speakTask(${i})">▶️</button> <button class="del" onclick="delTask(${i})">✕</button></div></div>`;
-  });
-}
-function speakTask(i){ speak(tasks[i].text); }
-function delTask(i){ tasks.splice(i,1); save(); }
-
-function checkAlarm(){
-  let cur = new Date().toTimeString().slice(0,5);
-  tasks.forEach((task)=>{
-    if(task.time===cur && !task.alerted && !task.done){
-      task.alerted=true; save();
-      // তোমার লেখাটাই - মেসেজ + ভয়েস
-      if(Notification.permission==='granted'){
-        new Notification('⏰ Personal Assistant', {body: task.text});
-      }
-      speak(task.text);
-      if(navigator.vibrate) navigator.vibrate([500,200,500]);
-      setTimeout(()=>{ speak(task.text); }, 8000);
-      alert('⏰ '+task.text);
-    }
-  });
-}
-setInterval(checkAlarm, 1000);
+let tasks=JSON.parse(localStorage.getItem('m3tasks')||'[]');
+let wakeLock=null,wakeOn=false;
+async function toggleWake(){try{if(!wakeOn){wakeLock=await navigator.wakeLock.request('screen');wakeOn=true;document.getElementById('wakeBtn').textContent='✅ স্ক্রিন অন আছে - অ্যালার্ম চলছে';}else{await wakeLock.release();wakeOn=false;document.getElementById('wakeBtn').textContent='☀️ স্ক্রিন অন রাখুন';}}catch(e){alert('স্ক্রিন অন রাখতে পারলাম না, অ্যাপ খোলা রাখো');}}
+function save(){localStorage.setItem('m3tasks',JSON.stringify(tasks));render();}
+function addTask(){let t=document.getElementById('text').value.trim();let tm=document.getElementById('time').value;if(!t||!tm)return alert('লেখা আর টাইম ২টাই দাও');tasks.push({t,tm,done:false});save();document.getElementById('text').value='';speak('কাজ যোগ করা হয়েছে, '+t);}
+function render(){let el=document.getElementById('list');el.innerHTML=tasks.map((x,i)=>`<div class="task"><div><b>${x.t}</b><br>🔔 ${x.tm}</div><div><button onclick="speak(tasks[${i}].t)">▶️</button> <button onclick="tasks.splice(${i},1);save()">🗑️</button></div></div>`).join('');}
+function speak(txt){speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(txt);u.lang='bn-BD';speechSynthesis.speak(u);}
+function enableNotif(){Notification.requestPermission().then(p=>{alert(p==='granted'?'নোটিফিকেশন চালু ✅':'Allow দাও');});}
+setInterval(()=>{let n=new Date();let cur=n.getHours().toString().padStart(2,'0')+':'+n.getMinutes().toString().padStart(2,'0');tasks.forEach(x=>{if(!x.done&&x.tm===cur){x.done=true;save();speak(x.t);if(Notification.permission==='granted')new Notification('Assistant M.3',{body:x.t});alert('🔔 '+x.t);}});},5000);
 render();
-</script>
-</body>
-</html>
+</script></body></html>
