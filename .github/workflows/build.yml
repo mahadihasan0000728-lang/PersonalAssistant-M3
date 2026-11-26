@@ -13,6 +13,8 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+       - name: Prepare project
+        run: | 
           mkdir -p app/src/main/assets
           mkdir -p app/src/main/java/com/mahadi/assistant
           cp index.html app/src/main/assets/ || true
