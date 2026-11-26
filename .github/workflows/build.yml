@@ -3,7 +3,6 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -14,14 +13,41 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-      - name: Build APK with Bubblewrap
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Build APK
         run: |
-          npm install -g @bubblewrap/cli
-          bubblewrap init --manifest=https://mahadidev7.github.io/PersonalAssistant-M3/manifest.json --directory=./twa-project || true
-          cd twa-project || exit 0
-          ./gradlew assembleRelease || ./gradlew assembleDebug || true
+          mkdir -p app/src/main/assets
+          mkdir -p app/src/main/java/com/mahadi/assistant
+          cp index.html app/src/main/assets/ || true
+          cp manifest.json app/src/main/assets/ || true
+          cp service-worker.js app/src/main/assets/ || true
+          cp icon-512.png app/src/main/assets/ || true
+          cat > settings.gradle <<'EOF'
+          include ':app'
+          EOF
+          cat > build.gradle <<'EOF'
+          buildscript { repositories { google(); mavenCentral() } dependencies { classpath 'com.android.application:8.2.2' } }
+          allprojects { repositories { google(); mavenCentral() } }
+          EOF
+          cat > app/build.gradle <<'EOF'
+          apply plugin: 'com.android.application'
+          android { namespace 'com.mahadi.assistant'; compileSdk 34; defaultConfig { applicationId 'com.mahadi.assistant'; minSdk 24; targetSdk 34; versionCode 1; versionName '1.0' } buildTypes { release { minifyEnabled false } } compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 } }
+          dependencies {}
+          EOF
+          cat > app/src/main/AndroidManifest.xml <<'EOF'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"><uses-permission android:name="android.permission.INTERNET" /><application android:label="Personal Assistant" android:theme="@android:style/Theme.Material.Light.NoActionBar"><activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity></application></manifest>
+          EOF
+          cat > app/src/main/java/com/mahadi/assistant/MainActivity.java <<'EOF'
+          package com.mahadi.assistant;
+          import android.app.Activity; import android.os.Bundle; import android.webkit.WebSettings; import android.webkit.WebView; import android.webkit.WebViewClient;
+          public class MainActivity extends Activity { protected void onCreate(Bundle s){ super.onCreate(s); WebView w=new WebView(this); setContentView(w); WebSettings st=w.getSettings(); st.setJavaScriptEnabled(true); st.setDomStorageEnabled(true); st.setAllowFileAccess(true); w.setWebViewClient(new WebViewClient()); w.loadUrl("file:///android_asset/index.html"); } }
+          EOF
+          gradle wrapper --gradle-version 8.5 || true
+          chmod +x gradlew || true
+          ./gradlew assembleDebug
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-apk
-          path: "**/*.apk"
+          path: app/build/outputs/apk/debug/app-debug.apk
