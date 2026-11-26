@@ -13,10 +13,6 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-      - name: Build APK
-        run: |
           mkdir -p app/src/main/assets
           mkdir -p app/src/main/java/com/mahadi/assistant
           cp index.html app/src/main/assets/ || true
