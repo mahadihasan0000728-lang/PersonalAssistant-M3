@@ -2,30 +2,31 @@
 <html lang="bn"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Assistant M.3</title>
 <style>
-*{box-sizing:border-box}body{font-family:system-ui,sans-serif;background:#f6f6f6;margin:0;padding:14px}
+body{font-family:system-ui;background:#f6f6f6;padding:14px}
 .card{background:#fff;border-radius:18px;padding:18px}
-input{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;font-size:16px;margin:10px 0}
-.btn{width:100%;padding:15px;border:0;border-radius:12px;font-size:17px;font-weight:700}
-.black{background:#111;color:#fff}.blue{background:#2563eb;color:#fff;margin-top:10px}
-.green{background:#16a34a;color:#fff;margin-top:10px}.task{background:#fff;border-radius:14px;padding:14px;margin-top:12px;display:flex;justify-content:space-between}
+input{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;margin:10px 0;font-size:16px}
+.btn{width:100%;padding:15px;border:0;border-radius:12px;font-weight:700;font-size:17px}
+.black{background:#111;color:#fff}
 </style></head><body>
 <div class="card"><h1>Assistant M.3 ✨</h1><p>আপনার ব্যক্তিগত ভয়েস অ্যাসিস্ট্যান্ট</p>
 <input id="text" placeholder="ভয়েসে যা শুনতে চাও লিখো...">
 <input id="time" type="time">
 <button class="btn black" onclick="addTask()">🔔 ভয়েস অ্যালার্ম সহ যোগ করুন</button>
-<button class="btn blue" onclick="enableNotif()">🔔 নোটিফিকেশন চালু করুন</button>
-<button class="btn green" id="wakeBtn" onclick="toggleWake()">☀️ স্ক্রিন অন রাখুন - অ্যালার্ম ১০০% বাজবে</button>
-<div id="status" style="background:#fef9c3;padding:10px;border-radius:10px;margin-top:10px">✅ অ্যাপ খোলা আছে - প্রতি ৫ সেকেন্ডে টাইম চেক চলছে।</div></div>
-<div id="list"></div>
+<p id="status" style="background:#fef9c3;padding:10px;border-radius:10px">✅ অ্যালার্ম ফোনের সিস্টেমে সেভ হবে - অ্যাপ বন্ধ থাকলেও বাজবে</p>
+</div><div id="list"></div>
 <script>
-let tasks=JSON.parse(localStorage.getItem('m3tasks')||'[]');
-let wakeLock=null,wakeOn=false;
-async function toggleWake(){try{if(!wakeOn){wakeLock=await navigator.wakeLock.request('screen');wakeOn=true;document.getElementById('wakeBtn').textContent='✅ স্ক্রিন অন আছে - অ্যালার্ম চলছে';}else{await wakeLock.release();wakeOn=false;document.getElementById('wakeBtn').textContent='☀️ স্ক্রিন অন রাখুন';}}catch(e){alert('স্ক্রিন অন রাখতে পারলাম না, অ্যাপ খোলা রাখো');}}
-function save(){localStorage.setItem('m3tasks',JSON.stringify(tasks));render();}
-function addTask(){let t=document.getElementById('text').value.trim();let tm=document.getElementById('time').value;if(!t||!tm)return alert('লেখা আর টাইম ২টাই দাও');tasks.push({t,tm,done:false});save();document.getElementById('text').value='';speak('কাজ যোগ করা হয়েছে, '+t);}
-function render(){let el=document.getElementById('list');el.innerHTML=tasks.map((x,i)=>`<div class="task"><div><b>${x.t}</b><br>🔔 ${x.tm}</div><div><button onclick="speak(tasks[${i}].t)">▶️</button> <button onclick="tasks.splice(${i},1);save()">🗑️</button></div></div>`).join('');}
-function speak(txt){speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(txt);u.lang='bn-BD';speechSynthesis.speak(u);}
-function enableNotif(){Notification.requestPermission().then(p=>{alert(p==='granted'?'নোটিফিকেশন চালু ✅':'Allow দাও');});}
-setInterval(()=>{let n=new Date();let cur=n.getHours().toString().padStart(2,'0')+':'+n.getMinutes().toString().padStart(2,'0');tasks.forEach(x=>{if(!x.done&&x.tm===cur){x.done=true;save();speak(x.t);if(Notification.permission==='granted')new Notification('Assistant M.3',{body:x.t});alert('🔔 '+x.t);}});},5000);
+let tasks=JSON.parse(localStorage.getItem('m3')||'[]');
+function save(){localStorage.setItem('m3',JSON.stringify(tasks));render();}
+function addTask(){
+  let t=document.getElementById('text').value.trim();
+  let tm=document.getElementById('time').value;
+  if(!t||!tm) return alert('লেখা আর টাইম দাও');
+  tasks.push({t,tm}); save();
+  // Native Android কে বলবে অ্যালার্ম সেট করতে
+  if(window.AndroidBridge) window.AndroidBridge.setAlarm(t, tm);
+  else alert('APK তে ইন্সটল করলে অ্যালার্ম সেভ হবে');
+  document.getElementById('text').value='';
+}
+function render(){document.getElementById('list').innerHTML=tasks.map((x,i)=>`<div style="background:#fff;padding:14px;border-radius:14px;margin-top:10px;display:flex;justify-content:space-between"><div><b>${x.t}</b><br>🔔 ${x.tm}</div><button onclick="tasks.splice(${i},1);save()">🗑️</button></div>`).join('');}
 render();
 </script></body></html>
